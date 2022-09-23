@@ -2,7 +2,7 @@ cabal-version: 2.4
 
 name:                   stake-contract
 version:                0
-description:            A plutus script for retreiving funds.
+description:            A plutus script for staking funds.
 author:                 The Ancient Kraken
 maintainer:             logical.mechanism@protonmail.com
 license:                AGPL-3.0-only
