@@ -48,7 +48,7 @@ import           Plutus.Script.Utils.V2.Scripts as Utils
 -}
 -- the only allowed pool
 poolId :: PlutusV2.PubKeyHash
-poolId = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [236, 191, 96, 113, 215, 194, 174, 87, 82, 180, 90, 226, 138, 125, 137, 158, 143, 194, 57, 70, 38, 170, 191, 12, 65, 208, 124, 155] }
+poolId = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [224, 64, 146, 8, 1, 182, 157, 96, 193, 142, 43, 192, 1, 132, 101, 92, 137, 157, 222, 167, 171, 173, 92, 239, 69, 236, 220, 30] }
 
 -- the payout address
 payoutPkh :: PlutusV2.PubKeyHash
@@ -79,11 +79,11 @@ isAddrGettingPaid (x:xs) addr val
 createAddress :: PlutusV2.PubKeyHash -> PlutusV2.PubKeyHash -> PlutusV2.Address
 createAddress pkh sc =
   if PlutusV2.getPubKeyHash sc == emptyByteString
-    then PlutusV2.Address (PlutusV2.PubKeyCredential pkh) Nothing
-    else PlutusV2.Address (PlutusV2.PubKeyCredential pkh) stakeCredential
+    then PlutusV2.Address (PlutusV2.PubKeyCredential pkh) Nothing         -- payment pkh only
+    else PlutusV2.Address (PlutusV2.PubKeyCredential pkh) stakeCredential -- payment pkh and sc 
   where
     stakeCredential :: Maybe PlutusV2.StakingCredential
-    stakeCredential = (Just $ PlutusV2.StakingHash $ PlutusV2.PubKeyCredential sc)
+    stakeCredential = Just $ PlutusV2.StakingHash $ PlutusV2.PubKeyCredential sc
 -------------------------------------------------------------------------------
 -- | Create a proper bytestring
 -------------------------------------------------------------------------------
@@ -116,7 +116,7 @@ PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Withdraw, 0 )
 mkPolicy :: BuiltinData -> PlutusV2.ScriptContext -> Bool
 mkPolicy redeemer' context =
   case redeemer of
-    -- handle the withdrawl of satking rewards
+    -- handle the withdrawl of staking rewards
     (Withdraw sd) -> do
       { let stakingCred = PlutusV2.StakingHash  $ PlutusV2.ScriptCredential $ stakeCred sd
       ; let a = traceIfFalse "Bad Withdrawal"   $ checkTheWithdrawal rewardWithdrawal stakingCred

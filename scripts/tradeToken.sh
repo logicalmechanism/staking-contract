@@ -8,7 +8,7 @@ testnet_magic=$(cat testnet.magic)
 
 
 # Addresses
-sender_address=$(cat wallets/delegator-wallet/payment.addr)
+sender_address=$(cat wallets/reference-wallet/payment.addr)
 receiver_address=$(cat wallets/staker-wallet/base.addr)
 # receiver_address="addr_test1qrupt9d9ug2ufnrrajp2q7gwvmrtzzgr80p5ug7q8nt4d66hu0s5mnhxh2853wtsgn9gdz6wuqtaqnkv0yk78p474d6qudapqh"
 
@@ -21,7 +21,7 @@ min_utxo=$(${cli} transaction calculate-min-required-utxo \
     --tx-out-datum-hash-value 42 \
     --tx-out="${receiver_address} ${asset}" | tr -dc '0-9')
 change_to_be_traded="${sender_address} + ${min_utxo} + ${asset}"
-token_to_be_traded="${receiver_address} + 7972570926"
+token_to_be_traded="${receiver_address} + 8972570926"
 
 echo -e "\nTrading A Token:\n" ${token_to_be_traded}
 echo -e "\nChange:\n" ${change_to_be_traded}
@@ -50,10 +50,10 @@ FEE=$(${cli} transaction build \
     --out-file tmp/tx.draft \
     --change-address ${sender_address} \
     --tx-in ${HEXTXIN} \
-    --tx-out="${change_to_be_traded}" \
     --tx-out="${token_to_be_traded}" \
     --testnet-magic ${testnet_magic})
 
+    # --tx-out="${change_to_be_traded}" \
 IFS=':' read -ra VALUE <<< "${FEE}"
 IFS=' ' read -ra FEE <<< "${VALUE[1]}"
 FEE=${FEE[1]}
@@ -63,7 +63,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/delegator-wallet/payment.skey \
+    --signing-key-file wallets/reference-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
     --testnet-magic ${testnet_magic}
