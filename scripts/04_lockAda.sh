@@ -14,8 +14,15 @@ stake_path="../stake-contract/stake-contract.plutus"
 script_address=$(${cli} address build --payment-script-file ${lock_path} --stake-script-file ${stake_path} --testnet-magic ${testnet_magic})
 
 staker_address=$(cat wallets/seller-wallet/payment.addr)
+staker_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+
 script_address_out="${script_address} + 12345678"
 echo "Stake OUTPUT: "${script_address_out}
+
+# update the lock datum
+variable=${staker_pkh}; jq --arg variable "$variable" '.fields[0].bytes=$variable' ../scripts/data/stake_datum.json > ../scripts/data/stake_datum-new.json
+mv ../scripts/data/stake_datum-new.json ../scripts/data/stake_datum.json
+
 #
 # exit
 #
