@@ -4,16 +4,24 @@ set -e
 export CARDANO_NODE_SOCKET_PATH=$(cat path_to_socket.sh)
 cli=$(cat path_to_cli.sh)
 testnet_magic=$(cat testnet.magic)
+
 # get params
 ${cli} query protocol-parameters --testnet-magic ${testnet_magic} --out-file tmp/protocol.json
+
+# collat info
 collat_address=$(cat wallets/collat-wallet/payment.addr)
 collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/collat-wallet/payment.vkey)
 
-staker_address=$(cat wallets/staker-wallet/base.addr)
-stakeAddressDeposit=$(cat tmp/protocol.json | jq -r '.stakeAddressDeposit')
-echo stakeAddressDeposit : $stakeAddressDeposit
-staker_address_out="${staker_address} + ${stakeAddressDeposit}"
-echo "Register OUTPUT: "${staker_address_out}
+# script
+lock_path="../locking-contract/locking-contract.plutus"
+stake_path="../stake-contract/stake-contract.plutus"
+script_address=$(${cli} address build --payment-script-file ${lock_path} --stake-script-file ${stake_path} --testnet-magic ${testnet_magic})
+
+staker_address=$(cat wallets/seller-wallet/payment.addr)
+staker_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
+
+staker_address_out="${staker_address} + 12345678"
+echo "Remove OUTPUT: "${staker_address_out}
 #
 # exit
 #
@@ -45,6 +53,22 @@ alltxin=""
 TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/staker_utxo.json)
 staker_tx_in=${TXIN::-8}
 
+# get script info
+echo -e "\033[0;36m Gathering Script UTxO Information  \033[0m"
+${cli} query utxo \
+    --address ${script_address} \
+    --testnet-magic ${testnet_magic} \
+    --out-file tmp/script_utxo.json
+# transaction variables
+TXNS=$(jq length tmp/script_utxo.json)
+if [ "${TXNS}" -eq "0" ]; then
+   echo -e "\n \033[0;31m NO UTxOs Found At ${script_address} \033[0m \n";
+   exit;
+fi
+alltxin=""
+TXIN=$(jq -r --arg alltxin "" 'keys[] | . + $alltxin + " --tx-in"' tmp/script_utxo.json)
+script_tx_in=${TXIN::-8}
+
 script_ref_utxo=$(${cli} transaction txid --tx-file tmp/tx-reference-utxo.signed)
 
 # exit
@@ -56,12 +80,14 @@ FEE=$(${cli} transaction build \
     --change-address ${staker_address} \
     --tx-in-collateral="${collat_utxo}" \
     --tx-in ${staker_tx_in} \
+    --tx-in ${script_tx_in} \
+    --spending-tx-in-reference="${script_ref_utxo}#1" \
+    --spending-plutus-script-v2 \
+    --spending-reference-tx-in-inline-datum-present \
+    --spending-reference-tx-in-redeemer-file data/remove_redeemer.json \
     --tx-out="${staker_address_out}" \
-    --certificate ../stake-contract/deleg.cert \
-    --certificate-tx-in-reference="${script_ref_utxo}#2" \
-    --certificate-plutus-script-v2 \
-    --certificate-reference-tx-in-redeemer-file data/reg_redeemer.json \
     --required-signer-hash ${collat_pkh} \
+    --required-signer-hash ${staker_pkh} \
     --testnet-magic ${testnet_magic})
 
 IFS=':' read -ra VALUE <<< "${FEE}"
@@ -73,7 +99,7 @@ echo -e "\033[1;32m Fee: \033[0m" $FEE
 #
 echo -e "\033[0;36m Signing \033[0m"
 ${cli} transaction sign \
-    --signing-key-file wallets/staker-wallet/payment.skey \
+    --signing-key-file wallets/seller-wallet/payment.skey \
     --signing-key-file wallets/collat-wallet/payment.skey \
     --tx-body-file tmp/tx.draft \
     --out-file tmp/tx.signed \
