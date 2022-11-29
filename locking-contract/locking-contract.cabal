@@ -2,7 +2,7 @@ cabal-version: 2.4
 
 name:                   locking-contract
 version:                0
-description:            A plutus script for retreiving nfts.
+description:            A plutus script for locking funds.
 author:                 The Ancient Kraken
 maintainer:             logical.mechanism@protonmail.com
 license:                AGPL-3.0-only
@@ -54,6 +54,7 @@ library
                       , plutus-tx-plugin
                       , plutus-script-utils
                       , serialise
+                      , useful-funcs
 
   ghc-options: -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
 

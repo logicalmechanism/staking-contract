@@ -37,7 +37,6 @@ import           Codec.Serialise                ( serialise )
 import qualified Data.ByteString.Lazy           as LBS
 import qualified Data.ByteString.Short          as SBS
 import qualified PlutusTx.AssocMap              as AM
-import qualified Plutus.V1.Ledger.Value         as Value
 import qualified Plutus.V1.Ledger.Scripts       as Scripts
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
@@ -48,14 +47,14 @@ import           UsefulFuncs
 -}
 -- the only allowed pool
 poolId :: PlutusV2.PubKeyHash
-poolId = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [224, 64, 146, 8, 1, 182, 157, 96, 193, 142, 43, 192, 1, 132, 101, 92, 137, 157, 222, 167, 171, 173, 92, 239, 69, 236, 220, 30] }
+poolId = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [239, 174, 114, 192, 122, 38, 228, 84, 43, 165, 94, 245, 157, 53, 173, 69, 255, 170, 172, 49, 40, 101, 227, 167, 88, 237, 233, 151] }
 
 -- the payout address
 payoutPkh :: PlutusV2.PubKeyHash
-payoutPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [56, 252, 183, 32, 94, 81, 223, 96, 51, 121, 131, 27, 0, 174, 120, 37, 247, 83, 227, 105, 252, 116, 145, 50, 127, 142, 119, 155] }
+payoutPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
 payoutSc :: PlutusV2.PubKeyHash
-payoutSc = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [64, 179, 201, 141, 59, 95, 90, 119, 72, 130, 157, 97, 46, 158, 28, 205, 95, 66, 153, 112, 171, 201, 171, 254, 174, 134, 122, 249] }
+payoutSc = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [] }
 
 payoutAddr :: PlutusV2.Address
 payoutAddr = createAddress payoutPkh payoutSc

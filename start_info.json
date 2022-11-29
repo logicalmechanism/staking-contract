@@ -1,7 +1,7 @@
 {
   "__comment1__": "This is the stake pool id",
-  "poolId": "e040920801b69d60c18e2bc00184655c899ddea7abad5cef45ecdc1e",
+  "poolId": "efae72c07a26e4542ba55ef59d35ad45ffaaac312865e3a758ede997",
   "__comment2__": "This is the reward address",
-  "rewardPkh": "38fcb7205e51df603379831b00ae7825f753e369fc7491327f8e779b",
+  "rewardPkh": "a2108b7b1704f9fe12c906096ea1634df8e089c9ccfd651abae4a439",
   "rewardSc": ""
 }
