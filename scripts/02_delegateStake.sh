@@ -13,6 +13,7 @@ collat_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/col
 
 # payee of the delegation
 payee_address=$(cat wallets/seller-wallet/payment.addr)
+
 #
 # exit
 #
