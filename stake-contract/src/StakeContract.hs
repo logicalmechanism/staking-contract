@@ -37,62 +37,27 @@ import           Codec.Serialise                ( serialise )
 import qualified Data.ByteString.Lazy           as LBS
 import qualified Data.ByteString.Short          as SBS
 import qualified PlutusTx.AssocMap              as AM
-import qualified Plutus.V1.Ledger.Value         as Value
 import qualified Plutus.V1.Ledger.Scripts       as Scripts
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
+import           UsefulFuncs
 {-
   Author   : The Ancient Kraken
   Copyright: 2022
-  Version  : Rev 1
 -}
 -- the only allowed pool
 poolId :: PlutusV2.PubKeyHash
-poolId = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [224, 64, 146, 8, 1, 182, 157, 96, 193, 142, 43, 192, 1, 132, 101, 92, 137, 157, 222, 167, 171, 173, 92, 239, 69, 236, 220, 30] }
+poolId = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [239, 174, 114, 192, 122, 38, 228, 84, 43, 165, 94, 245, 157, 53, 173, 69, 255, 170, 172, 49, 40, 101, 227, 167, 88, 237, 233, 151] }
 
 -- the payout address
 payoutPkh :: PlutusV2.PubKeyHash
-payoutPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [56, 252, 183, 32, 94, 81, 223, 96, 51, 121, 131, 27, 0, 174, 120, 37, 247, 83, 227, 105, 252, 116, 145, 50, 127, 142, 119, 155] }
+payoutPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
 payoutSc :: PlutusV2.PubKeyHash
-payoutSc = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [64, 179, 201, 141, 59, 95, 90, 119, 72, 130, 157, 97, 46, 158, 28, 205, 95, 66, 153, 112, 171, 201, 171, 254, 174, 134, 122, 249] }
+payoutSc = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [] }
 
 payoutAddr :: PlutusV2.Address
 payoutAddr = createAddress payoutPkh payoutSc
--------------------------------------------------------------------------------
--- | Search each TxOut for an address and value.
--------------------------------------------------------------------------------
-isAddrGettingPaid :: [PlutusV2.TxOut] -> PlutusV2.Address -> PlutusV2.Value -> Bool
-isAddrGettingPaid []     _    _ = False
-isAddrGettingPaid (x:xs) addr val
-  | checkAddr && checkVal = True -- found utxo with reward payout
-  | otherwise             = isAddrGettingPaid xs addr val
-  where
-    checkAddr :: Bool
-    checkAddr = PlutusV2.txOutAddress x == addr
-
-    checkVal :: Bool
-    checkVal = PlutusV2.txOutValue x == val -- exact reward only
--------------------------------------------------------------------------
--- | Create a proper Address Type.
--------------------------------------------------------------------------
-createAddress :: PlutusV2.PubKeyHash -> PlutusV2.PubKeyHash -> PlutusV2.Address
-createAddress pkh sc =
-  if PlutusV2.getPubKeyHash sc == emptyByteString
-    then PlutusV2.Address (PlutusV2.PubKeyCredential pkh) Nothing         -- payment pkh only
-    else PlutusV2.Address (PlutusV2.PubKeyCredential pkh) stakeCredential -- payment pkh and sc 
-  where
-    stakeCredential :: Maybe PlutusV2.StakingCredential
-    stakeCredential = Just $ PlutusV2.StakingHash $ PlutusV2.PubKeyCredential sc
--------------------------------------------------------------------------------
--- | Create a proper bytestring
--------------------------------------------------------------------------------
-createBuiltinByteString :: [Integer] -> PlutusV2.BuiltinByteString
-createBuiltinByteString intList = flattenBuiltinByteString [ consByteString x emptyByteString | x <- intList]
-  where
-    flattenBuiltinByteString :: [PlutusV2.BuiltinByteString] -> PlutusV2.BuiltinByteString
-    flattenBuiltinByteString []     = emptyByteString 
-    flattenBuiltinByteString (x:xs) = appendByteString x (flattenBuiltinByteString xs)
 -------------------------------------------------------------------------------
 -- | Create the stake data.
 -------------------------------------------------------------------------------
@@ -146,25 +111,22 @@ mkPolicy redeemer' context =
     rewardWithdrawal :: [(PlutusV2.StakingCredential, Integer)]
     rewardWithdrawal = AM.toList $ PlutusV2.txInfoWdrl info
 
-    -- | check for withdraws then check if the payout address gets the reward
+     -- | check for withdraws then check if the payout address gets the reward
     checkTheWithdrawal :: [(PlutusV2.StakingCredential, Integer)] -> PlutusV2.StakingCredential -> Bool
     checkTheWithdrawal []     _  = False
     checkTheWithdrawal (x:xs) sc =
-      if traceIfFalse "Bad Stake Key" $ stakeCred == sc -- must be from this stake
-        then if rewardAmt >= 1_000_000                  -- at least min ada threshold
-          then traceIfFalse "No Reward Payment" $ isAddrGettingPaid txOutputs payoutAddr adaValue -- send reward to payout address
-          else traceIfFalse "Not Enough Reward" False                                             -- needs to be the min utxo
+      if     traceIfFalse "Incorrect Stake Key"      $ stakeCred == sc                                           -- must be from this stake
+        then traceIfFalse "Incorrect Reward Payment" $ isAddrGettingPaidExactly txOutputs payoutAddr payoutValue -- send reward to payout address
         else checkTheWithdrawal xs sc
       where
-        -- (PlutusV2.StakingCredential, Integer) is the data format forx in stakeCred and rewardAmt
         stakeCred :: PlutusV2.StakingCredential
         stakeCred = fst x
 
         rewardAmt :: Integer
         rewardAmt = snd x
 
-        adaValue :: PlutusV2.Value
-        adaValue = Value.singleton Value.adaSymbol Value.adaToken rewardAmt
+        payoutValue :: PlutusV2.Value
+        payoutValue = adaValue rewardAmt
 
     -- | loop all the certs and check if the stake is going to the right pool
     checkTheCerts :: [PlutusV2.DCert] -> PlutusV2.StakingCredential -> Bool
@@ -172,16 +134,18 @@ mkPolicy redeemer' context =
     checkTheCerts (x:xs) sc =
       if checkCert x
         then True                -- correct credential and pool
-        else checkTheCerts xs sc 
+        else checkTheCerts xs sc -- loop all the certs
       where
-        -- check for a delegation to stake pool
         checkCert :: PlutusV2.DCert -> Bool
         checkCert cert = 
           case cert of
+            -- check for a delegation to stake pool
             (PlutusV2.DCertDelegDelegate sc' poolId') -> 
-              ( traceIfFalse "Bad Stake Key" $     sc == sc'     ) && -- only this cred can be staked
-              ( traceIfFalse "Bad Pool Id"   $ poolId == poolId' )    -- must delegate to specific pool id
-            _ -> False                                                -- any other cert fails but not registration
+              ( traceIfFalse "Incorrect Stake Key" $ sc     == sc'     ) && -- only this cred can be staked
+              ( traceIfFalse "Incorrect Pool Id"   $ poolId == poolId' )    -- must delegate to specific pool id
+    
+            -- any other cert fails but stake registration
+            _ -> False                                              -- any other cert fails but not registration
 -------------------------------------------------------------------------------
 -- | Compile Information
 -------------------------------------------------------------------------------

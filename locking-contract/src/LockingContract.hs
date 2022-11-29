@@ -37,30 +37,54 @@ import qualified Data.ByteString.Lazy           as LBS
 import qualified Data.ByteString.Short          as SBS
 import qualified Plutus.V1.Ledger.Scripts       as Scripts
 import qualified Plutus.V2.Ledger.Api           as PlutusV2
+import qualified Plutus.V2.Ledger.Contexts      as ContextsV2
 import           Plutus.Script.Utils.V2.Scripts as Utils
+import           UsefulFuncs
 {- |
   Author   : The Ancient Kraken
   Copyright: 2022
-  Version  : Rev 1
 -}
---------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Create the datum parameters data object.
 -------------------------------------------------------------------------------
-data CustomDatumType = CustomDatumType {}
+data CustomDatumType = CustomDatumType
+  { cdtPkh :: PlutusV2.PubKeyHash
+  -- ^ A payment public key hash.
+  }
 PlutusTx.unstableMakeIsData ''CustomDatumType
 -------------------------------------------------------------------------------
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
-data CustomRedeemerType = Remove
-PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Remove, 0 ) ]
+data CustomRedeemerType = Remove |
+                          Debug
+PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Remove, 0 ) 
+                                                , ( 'Debug,  1 )
+                                                ]
 -------------------------------------------------------------------------------
 -- | mkValidator :: Datum -> Redeemer -> ScriptContext -> Bool
 -------------------------------------------------------------------------------
 {-# INLINABLE mkValidator #-}
 mkValidator :: CustomDatumType -> CustomRedeemerType -> PlutusV2.ScriptContext -> Bool
-mkValidator _ redeemer _ =
+mkValidator datum redeemer context =
   case redeemer of
-    Remove -> True
+    -- wallet must sign to remove the utxo
+    Remove -> do
+      { let a = traceIfFalse "Tx Sig Error" $ ContextsV2.txSignedBy info (cdtPkh datum)          -- wallet must sign it
+      ; let b = traceIfFalse "In/Out Error" $ isNInputs txInputs 1 && isNOutputs contTxOutputs 0 -- single input no outputs
+      ;         traceIfFalse "Remove Error" $ all (==(True :: Bool)) [a,b]
+      }
+    
+    -- other endpoints fail
+    _ -> False
+  where
+    info :: PlutusV2.TxInfo
+    info = ContextsV2.scriptContextTxInfo context
+
+    txInputs :: [PlutusV2.TxInInfo]
+    txInputs = PlutusV2.txInfoInputs info
+
+    contTxOutputs :: [PlutusV2.TxOut]
+    contTxOutputs = ContextsV2.getContinuingOutputs context
 -------------------------------------------------------------------------------
 -- | Now we need to compile the Validator.
 -------------------------------------------------------------------------------
