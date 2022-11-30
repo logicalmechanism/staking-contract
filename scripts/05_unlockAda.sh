@@ -20,7 +20,7 @@ script_address=$(${cli} address build --payment-script-file ${lock_path} --stake
 staker_address=$(cat wallets/seller-wallet/payment.addr)
 staker_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 
-staker_address_out="${staker_address} + 12345678"
+staker_address_out="${staker_address} + 15000000000"
 echo "Remove OUTPUT: "${staker_address_out}
 #
 # exit

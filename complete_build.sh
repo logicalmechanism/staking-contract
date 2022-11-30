@@ -1,13 +1,13 @@
 #!/bin/bash
-# set -e
-# Complete Build
-echo -e "\033[1;35m Starting... \033[0m" 
+
+echo -e "\033[1;35m Starting Complete Build... \033[0m" 
 
 # get info
 poolId=$(cat start_info.json | jq -r .poolId)
 rewardPkh=$(cat start_info.json | jq -r .rewardPkh)
 rewardSc=$(cat start_info.json | jq -r .rewardSc)
 
+# store extra stuff in info folder
 mkdir -p info
 
 # starter nft data
@@ -65,11 +65,9 @@ mv ../scripts/data/withdraw_redeemer-new.json ../scripts/data/withdraw_redeemer.
 variable=$(cat stake.hash); jq --arg variable "$variable" '.fields[0].fields[0].bytes=$variable' ../scripts/data/delegate_redeemer.json > ../scripts/data/delegate_redeemer-new.json
 mv ../scripts/data/delegate_redeemer-new.json ../scripts/data/delegate_redeemer.json
 
-cd ..
+cd ../locking-contract
 
 echo -e "\033[1;35m Building Locking Contract... \033[0m"
-
-cd locking-contract
 
 # remove old data
 rm locking-contract.plutus
