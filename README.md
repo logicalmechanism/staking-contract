@@ -1,7 +1,8 @@
-# Staking Contract
+# Lock and Stake Contracts
 
-A smart contract for staking ADA on Cardano.
+A smart contract for locking and staking ADA.
 
-## Example
+The locking contract allows for a utxo to be unlocked with a correct signature of the wallet. The staking contract is designed for a single specific pool id where the rewards can only be withdrawn to a specific wallet. 
 
-The stake contract is compiled for a single stake address to be used at a single specific pool id and can only withdraw to a specific wallet when the cumulative reward is greater than one ADA. It is a simple staking contract designed for a single pool, single payout use case. It can be attached to wallets or contracts. An example of staking a contract is in the scripts folder
+It is a simple staking system designed for a single pool, single payout use case. The stake contract can be attached to a wallet or a contract. The example test scripts show how to register, delegator, and withdraw rewards. The contract can not be used as pledge for a pool because the CLI does not allow validation scripts to be used as the reward address yet.
+

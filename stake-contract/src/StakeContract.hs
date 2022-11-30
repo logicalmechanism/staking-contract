@@ -45,11 +45,14 @@ import           UsefulFuncs
   Author   : The Ancient Kraken
   Copyright: 2022
 -}
--- the only allowed pool
+-------------------------------------------------------------------------------
+-- | The only allowed pool for staking.
+-------------------------------------------------------------------------------
 poolId :: PlutusV2.PubKeyHash
 poolId = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [239, 174, 114, 192, 122, 38, 228, 84, 43, 165, 94, 245, 157, 53, 173, 69, 255, 170, 172, 49, 40, 101, 227, 167, 88, 237, 233, 151] }
-
--- the payout address
+-------------------------------------------------------------------------------
+-- | The reward payout address.
+-------------------------------------------------------------------------------
 payoutPkh :: PlutusV2.PubKeyHash
 payoutPkh = PlutusV2.PubKeyHash { PlutusV2.getPubKeyHash = createBuiltinByteString [162, 16, 139, 123, 23, 4, 249, 254, 18, 201, 6, 9, 110, 161, 99, 77, 248, 224, 137, 201, 204, 253, 101, 26, 186, 228, 164, 57] }
 
@@ -63,7 +66,7 @@ payoutAddr = createAddress payoutPkh payoutSc
 -------------------------------------------------------------------------------
 data StakeData = StakeData
   { stakeCred :: PlutusV2.ValidatorHash
-  -- ^ The staking credential of the script.
+  -- ^ The staking credential of the staking script.
   }
 PlutusTx.unstableMakeIsData ''StakeData
 -------------------------------------------------------------------------------
@@ -96,8 +99,9 @@ mkPolicy redeemer' context =
       }
     
   where
+    -- | create the redeemer type from the builtin data
     redeemer :: CustomRedeemerType
-    redeemer = PlutusTx.unsafeFromBuiltinData @CustomRedeemerType redeemer' -- build out the data type
+    redeemer = PlutusTx.unsafeFromBuiltinData @CustomRedeemerType redeemer'
     
     info :: PlutusV2.TxInfo
     info = PlutusV2.scriptContextTxInfo context
@@ -108,6 +112,7 @@ mkPolicy redeemer' context =
     dCerts :: [PlutusV2.DCert]
     dCerts = PlutusV2.txInfoDCert info
 
+    -- | create a list of staking credential and reward in lovelace
     rewardWithdrawal :: [(PlutusV2.StakingCredential, Integer)]
     rewardWithdrawal = AM.toList $ PlutusV2.txInfoWdrl info
 
@@ -136,6 +141,7 @@ mkPolicy redeemer' context =
         then True                -- correct credential and pool
         else checkTheCerts xs sc -- loop all the certs
       where
+        -- check that the delegation is correct
         checkCert :: PlutusV2.DCert -> Bool
         checkCert cert = 
           case cert of
@@ -145,7 +151,7 @@ mkPolicy redeemer' context =
               ( traceIfFalse "Incorrect Pool Id"   $ poolId == poolId' )    -- must delegate to specific pool id
     
             -- any other cert fails but stake registration
-            _ -> False                                              -- any other cert fails but not registration
+            _ -> False                                                      -- any other cert fails but not registration
 -------------------------------------------------------------------------------
 -- | Compile Information
 -------------------------------------------------------------------------------

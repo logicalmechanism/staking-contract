@@ -16,7 +16,7 @@ script_address=$(${cli} address build --payment-script-file ${lock_path} --stake
 staker_address=$(cat wallets/seller-wallet/payment.addr)
 staker_pkh=$(${cli} address key-hash --payment-verification-key-file wallets/seller-wallet/payment.vkey)
 
-script_address_out="${script_address} + 12345678"
+script_address_out="${script_address} + 15000000000"
 echo "Stake OUTPUT: "${script_address_out}
 
 # update the lock datum
