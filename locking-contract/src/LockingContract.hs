@@ -75,7 +75,7 @@ mkValidator datum redeemer context =
       }
     
     -- other endpoints fail
-    _ -> False
+    _ -> traceIfFalse "Incorrect Endpoint" False
   where
     info :: PlutusV2.TxInfo
     info = ContextsV2.scriptContextTxInfo context

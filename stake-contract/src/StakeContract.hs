@@ -73,9 +73,11 @@ PlutusTx.unstableMakeIsData ''StakeData
 -- | Create the redeemer type.
 -------------------------------------------------------------------------------
 data CustomRedeemerType = Withdraw StakeData |
-                          Delegate StakeData
+                          Delegate StakeData |
+                          Debug
 PlutusTx.makeIsDataIndexed ''CustomRedeemerType [ ( 'Withdraw, 0 )
                                                 , ( 'Delegate, 1 )
+                                                , ( 'Debug,    2 )
                                                 ]
 -------------------------------------------------------------------------------
 -- | mkPolicy :: Redeemer -> Context -> Bool
@@ -98,6 +100,8 @@ mkPolicy redeemer' context =
       ;         traceIfFalse "Delegate Error"  $ all (==True) [a]
       }
     
+    -- other endpoints fail
+    _ -> traceIfFalse "Incorrect Endpoint" False
   where
     -- | create the redeemer type from the builtin data
     redeemer :: CustomRedeemerType
