@@ -1,11 +1,13 @@
 #!/bin/bash
 
-echo -e "\033[1;35m Starting Complete Build... \033[0m" 
+echo -e "\033[1;35m\nStarting Complete Build... \033[0m" 
 
 # get info
 poolId=$(cat start_info.json | jq -r .poolId)
 rewardPkh=$(cat start_info.json | jq -r .rewardPkh)
 rewardSc=$(cat start_info.json | jq -r .rewardSc)
+
+echo -e "\033[1;35m\nUpdating Staking Contract \033[0m"
 
 # store extra stuff in info folder
 mkdir -p info
@@ -30,7 +32,7 @@ mv ./stake-contract/src/StakeContract.hs-new.hs ./stake-contract/src/StakeContra
 # build
 cd stake-contract
 
-echo -e "\033[1;35m Building Staking Contract... \033[0m"
+echo -e "\033[1;35m\nBuilding Staking Contract\n\033[0m"
 
 # remove old data
 rm stake-contract.plutus
@@ -51,9 +53,9 @@ python3 -c "import binascii;a='$(cat stake.hash)';s=binascii.unhexlify(a);print(
 cardano-cli stake-address registration-certificate --stake-script-file stake-contract.plutus  --out-file stake.cert
 cardano-cli stake-address delegation-certificate --stake-script-file stake-contract.plutus --stake-pool-id ${poolId} --out-file deleg.cert
 
-echo -e "\nStake Addr:" $(cat stake.addr)
-echo -e "\nStake Hash:" $(cat stake.hash)
-echo -e "\nStake Byte:" $(cat stake.bytes)
+echo -e "\033[1;36m\nStake Addr: $(cat stake.addr) \033[0m"
+echo -e "\033[1;36mStake Hash: $(cat stake.hash) \033[0m"
+echo -e "\033[1;36mStake Byte: $(cat stake.bytes) \033[0m"
 echo -e "\nStake Cert";cat stake.cert | jq
 echo -e "\nDeleg Cert";cat deleg.cert | jq
 
@@ -67,7 +69,7 @@ mv ../scripts/data/delegate_redeemer-new.json ../scripts/data/delegate_redeemer.
 
 cd ../locking-contract
 
-echo -e "\033[1;35m Building Locking Contract... \033[0m"
+echo -e "\033[1;35m\nBuilding Locking Contract\n\033[0m"
 
 # remove old data
 rm locking-contract.plutus
@@ -83,16 +85,18 @@ cardano-cli address build --payment-script-file locking-contract.plutus --testne
 cardano-cli transaction policyid --script-file locking-contract.plutus > validator.hash
 python3 -c "import binascii;a='$(cat validator.hash)';s=binascii.unhexlify(a);print([x for x in s])" > validator.bytes
 
-echo -e "\nValidator Addr:" $(cat validator.addr)
-echo -e "\nValidator Hash:" $(cat validator.hash)
-echo -e "\nValidator Byte:" $(cat validator.bytes)
+echo -e "\033[1;36m\nValidator Addr: $(cat validator.addr) \033[0m"
+echo -e "\033[1;36mValidator Hash: $(cat validator.hash) \033[0m"
+echo -e "\033[1;36mValidator Byte: $(cat validator.bytes) \033[0m"
 
 cd ..
 
+echo -e "\033[1;35m\nCompute SHA256SUM \033[0m"
+
 find ./*-contract/ -name '*.hash' -type f -exec sha256sum {} \; > info/hash.hashes
-echo -e "\033[1;36m \nvalidator sha256sum\n\033[0m"
+echo -e "\033[1;36m\nIndividual sha256sum\n\033[0m"
 echo -e "\033[1;33m$(cat info/hash.hashes) \033[0m"
 
 find . -name '*.hashes' -type f -exec sha256sum {} \; > info/final.check
-echo -e "\033[1;35m \nfinal sha256sum\n\033[0m"
+echo -e "\033[1;35m\nCombined sha256sum\n\033[0m"
 echo -e "\033[1;32m$(sha256sum info/final.check) \033[0m"
